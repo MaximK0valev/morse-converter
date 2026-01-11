@@ -52,7 +52,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	filename := time.Now().UTC().Format("2006-01-02_15-04-05") + filepath.Ext(handler.Filename)
-	outputPath := filepath.Join(".", filename)
+	outputPath := filepath.Join("outputs", filename)
 
 	err = os.WriteFile(outputPath, []byte(convert), 0644)
 	if err != nil {
