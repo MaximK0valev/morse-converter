@@ -8,9 +8,11 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/SaidHasan-go/morse-converter/internal/service"
+	"github.com/MaximK0valev/morse-converter/internal/service"
 )
 
+// IndexHandler serves the main HTML page.
+// It accepts only GET requests and responds with StatusMethodNotAllowed otherwise.
 func IndexHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "Метод не поддерживается", http.StatusMethodNotAllowed)
@@ -20,6 +22,11 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, "index.html")
 }
 
+// UploadHandler accepts a multipart file upload, auto-detects whether the content is
+// Morse or plain text, converts it, stores the result under the outputs/ directory,
+// and writes the converted content in the response.
+//
+// It accepts only POST requests and responds with StatusMethodNotAllowed otherwise.
 func UploadHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Метод не поддерживается", http.StatusMethodNotAllowed)

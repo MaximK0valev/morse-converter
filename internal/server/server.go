@@ -5,14 +5,20 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/SaidHasan-go/morse-converter/internal/handlers"
+	"github.com/MaximK0valev/morse-converter/internal/handlers"
 )
 
+// Server bundles application dependencies and the underlying HTTP server.
 type Server struct {
+	// Logger is used by the HTTP server and application components for logging.
 	Logger *log.Logger
-	HTTP   *http.Server
+
+	// HTTP is the configured net/http server instance.
+	HTTP *http.Server
 }
 
+// NewServer constructs a Server with all routes registered and reasonable timeouts set.
+// The returned Server is ready to be started via srv.HTTP.ListenAndServe.
 func NewServer(logger *log.Logger) *Server {
 	mux := http.NewServeMux()
 

@@ -1,3 +1,7 @@
+// Package morse provides conversion between text and Morse code.
+//
+// The default encoding supports Cyrillic (RU) letters, digits, and a limited set of punctuation.
+// Use DefaultConverter/ToMorse/ToText for common cases, or create a custom Converter via NewConverter.
 package morse
 
 import (
@@ -6,6 +10,7 @@ import (
 	"unicode"
 )
 
+// Morse encodings for supported Cyrillic letters, digits, and punctuation.
 const (
 	А  = ".-"
 	Б  = "-..."
@@ -67,11 +72,13 @@ const (
 	Space = " "
 )
 
+// EncodingMap defines a mapping from a rune to its Morse representation.
 type EncodingMap map[rune]string
 
 // averageSize is the average size of a morse char.
-const averageSize = 4.53 //Magic
+const averageSize = 4.53
 
+// DefaultMorse is the default encoding table used by DefaultConverter.
 var DefaultMorse = EncodingMap{
 	'А': А,
 	'Б': Б,
@@ -135,14 +142,18 @@ var reverseDefaultMorse = reverseEncodingMap(DefaultMorse)
 // Its primary use is inside Handlers.
 type ErrNoEncoding struct{ Text string }
 
-// Error implements the error interface.
+// Error returns a human-readable message for ErrNoEncoding.
 func (e ErrNoEncoding) Error() string { return fmt.Sprintf("No encoding for: %q", e.Text) }
 
+// RuneToMorse converts a single rune to Morse using DefaultMorse.
+// The rune is uppercased before lookup. If no encoding exists, an empty string is returned.
 func RuneToMorse(r rune) string {
 	r = unicode.ToUpper(r)
 	return DefaultMorse[r]
 }
 
+// MorseToRune converts a Morse sequence into a rune using DefaultMorse.
+// If the sequence is unknown, it returns the zero rune.
 func MorseToRune(morse string) rune {
 	return reverseDefaultMorse[morse]
 }
@@ -157,9 +168,9 @@ func reverseEncodingMap(encoding EncodingMap) map[string]rune {
 	return ret
 }
 
-// ToText converts a morse string to his textual representation.
+// ToText converts a morse string to its textual representation.
 //
-// For Example: "- . ... -" -> "TEST".
+// For example: "- . ... -" -> "TEST".
 func (c Converter) ToText(morse string) string {
 	out := make([]rune, 0, int(float64(len(morse))/averageSize))
 
@@ -217,9 +228,8 @@ type Converter struct {
 // IgnoreHandler ignores the error and returns nothing.
 func IgnoreHandler(error) string { return "" }
 
-// NewConverter creates a new converter with the specified configuration
-// convertingMap is an EncodingMap, it contains how the characters will be translated, usually this is set to DefaultMorse
-// but a custom one can be used. A nil convertingMap will panic.
+// NewConverter creates a Converter using the provided encoding map and options.
+// The encoding map must not be nil; NewConverter panics otherwise.
 func NewConverter(convertingMap EncodingMap, options ...ConverterOption) Converter {
 	if convertingMap == nil {
 		panic("Using a nil EncodingMap")
@@ -292,6 +302,7 @@ func (c Converter) ToMorse(text string) string {
 	return string(out)
 }
 
+// DefaultConverter is a preconfigured converter that uses DefaultMorse with common separators.
 var DefaultConverter = NewConverter(
 	DefaultMorse,
 
@@ -302,10 +313,10 @@ var DefaultConverter = NewConverter(
 	WithTrailingSeparator(false),
 )
 
-// ToText converts a morse string to his textual representation, it is an alias to DefaultConverter.ToText.
+// ToText converts a Morse-encoded string into text using the converter configuration.
 func ToText(morse string) string { return DefaultConverter.ToText(morse) }
 
-// ToMorse converts a text to his morse rrpresentation, it is an alias to DefaultConverter.ToMorse.
+// ToMorse converts text to Morse code using DefaultConverter.
 func ToMorse(text string) string { return DefaultConverter.ToMorse(text) }
 
 // WithHandler sets the handler for the Converter.
@@ -316,7 +327,7 @@ func WithHandler(handler ErrorHandler) ConverterOption {
 	}
 }
 
-// WithLowercaseHandling sets if the Converter may convert to uppercase before checking inside the EncodingMap.
+// WithLowercaseHandling enables uppercasing of input runes before encoding lookup.
 func WithLowercaseHandling(lowercaseHandling bool) ConverterOption {
 	return func(c Converter) Converter {
 		c.convertToUpper = lowercaseHandling
@@ -324,7 +335,7 @@ func WithLowercaseHandling(lowercaseHandling bool) ConverterOption {
 	}
 }
 
-// WithTrailingSeparator sets if the Converter may trail the charSeparator.
+// WithTrailingSeparator controls whether the converter keeps the trailing character separator.
 func WithTrailingSeparator(trailingSpace bool) ConverterOption {
 	return func(c Converter) Converter {
 		c.trailingSeparator = trailingSpace
@@ -332,8 +343,7 @@ func WithTrailingSeparator(trailingSpace bool) ConverterOption {
 	}
 }
 
-// WithCharSeparator sets the Character Separator.
-// The CharSeparator is the character used to separate two characters inside a Word.
+// WithCharSeparator sets the separator used between encoded characters.
 func WithCharSeparator(charSeparator string) ConverterOption {
 	return func(c Converter) Converter {
 		c.charSeparator = charSeparator
@@ -341,8 +351,7 @@ func WithCharSeparator(charSeparator string) ConverterOption {
 	}
 }
 
-// WithWordSeparator sets the Word Separator.
-// The Word Separator is used to separate two words, usually this is the Character Separator, a Space and another Character Separator.
+// WithWordSeparator sets the separator used between encoded words.
 func WithWordSeparator(wordSeparator string) ConverterOption {
 	return func(c Converter) Converter {
 		c.wordSeparator = wordSeparator

@@ -4,7 +4,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/SaidHasan-go/morse-converter/internal/server"
+	"github.com/MaximK0valev/morse-converter/internal/server"
 )
 
 func main() {
