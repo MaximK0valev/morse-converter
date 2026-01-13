@@ -168,37 +168,35 @@ func reverseEncodingMap(encoding EncodingMap) map[string]rune {
 	return ret
 }
 
-// ToText converts a morse string to its textual representation.
-//
-// For example: "- . ... -" -> "TEST".
+// ToText converts a Morse-encoded string into text using the converter configuration.
 func (c Converter) ToText(morse string) string {
 	out := make([]rune, 0, int(float64(len(morse))/averageSize))
 
-	words := strings.Split(morse, c.charSeparator+Space+c.charSeparator)
-	for _, word := range words {
+	// Split input by configured word separator
+	words := strings.Split(morse, c.wordSeparator)
+
+	for wi, word := range words {
 		chars := strings.Split(word, c.charSeparator)
 
 		for _, ch := range chars {
+			if ch == "" {
+				continue
+			}
+
 			text, ok := c.morseToRune[ch]
 			if !ok {
 				hand := []rune(c.Handling(ErrNoEncoding{string(ch)}))
 				out = append(out, hand...)
-
-				// Add a charSeparator is the len of the result is not zero
-				if len(hand) != 0 {
-					out = append(out, []rune(c.charSeparator)...)
-				}
 				continue
 			}
+
 			out = append(out, text)
 		}
 
-		out = append(out, ' ')
-	}
-
-	// Remove last charSeparator
-	if !c.trailingSeparator && len(out) >= len(c.charSeparator) {
-		out = out[:len(out)-len(c.charSeparator)]
+		// Add space between words (but not after last)
+		if wi != len(words)-1 {
+			out = append(out, ' ')
+		}
 	}
 
 	return string(out)
@@ -267,34 +265,38 @@ func NewConverter(convertingMap EncodingMap, options ...ConverterOption) Convert
 	return c
 }
 
-// ToMorse converts a text to his morse representation.
-// Lowercase characters are automatically converted to Uppercase.
-//
-// For Example: "Test" -> "- . ... -".
+// ToMorse converts a text string into Morse code using the converter configuration.
+// Lowercase characters are automatically converted to uppercase.
 func (c Converter) ToMorse(text string) string {
 	out := make([]rune, 0, int(float64(len(text))*averageSize))
 
 	for _, ch := range text {
+		// Preserve word boundaries
+		if ch == ' ' {
+			out = append(out, []rune(c.wordSeparator)...)
+			continue
+		}
+
 		if c.convertToUpper {
 			ch = unicode.ToUpper(ch)
 		}
 
-		if _, ok := c.runeToMorse[ch]; !ok {
+		code, ok := c.runeToMorse[ch]
+		if !ok {
 			hand := []rune(c.Handling(ErrNoEncoding{string(ch)}))
 			out = append(out, hand...)
 
-			// Add a charSeparator is the len of the result is not zero
 			if len(hand) != 0 {
 				out = append(out, []rune(c.charSeparator)...)
 			}
 			continue
 		}
 
-		out = append(out, []rune(c.runeToMorse[ch])...)
+		out = append(out, []rune(code)...)
 		out = append(out, []rune(c.charSeparator)...)
 	}
 
-	// Remove last charSeparator
+	// Remove trailing charSeparator if configured
 	if !c.trailingSeparator && len(out) >= len(c.charSeparator) {
 		out = out[:len(out)-len(c.charSeparator)]
 	}
